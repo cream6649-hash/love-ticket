@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกม 10 คำถามจากน้องครีม 💖</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Kanit', sans-serif; }
+        body {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            text-align: center;
+            width: 100%;
+            max-width: 380px;
+            position: relative;
+        }
+        .step-tag {
+            background: #ffeaa7;
+            color: #d63031;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        h2 { color: #2d3436; font-size: 18px; margin-bottom: 20px; line-height: 1.5; }
+        .options { display: flex; flex-direction: column; gap: 12px; position: relative; }
+        button {
+            padding: 14px;
+            font-size: 15px;
+            border: 2px solid #ff7675;
+            background: white;
+            color: #d63031;
+            border-radius: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover { background: #ff7675; color: white; transform: translateY(-2px); }
+        
+        .btn-no-forced {
+            position: absolute;
+            background: #dfe6e9 !important;
+            color: #b2bec3 !important;
+            border-color: #dfe6e9 !important;
+            cursor: not-allowed;
+            z-index: 10;
+        }
+
+        /* Modal Popup ใส่รหัส */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            width: 85%;
+            max-width: 320px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin: 15px 0;
+            border: 2px solid #ff7675;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 18px;
+            outline: none;
+        }
+        .pass-btn { background: #ff7675; color: white; width: 100%; }
+        .error-msg { color: #d63031; font-size: 13px; display: none; margin-top: -5px; margin-bottom: 10px; }
+
+        /* การ์ดตั๋วรางวัลบัตรพูดมาก */
+        .ticket {
+            background: linear-gradient(135deg, #ff7675, #d63031);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            border: 3px dashed #ffffff;
+            margin: 15px 0;
+            box-shadow: 0 8px 20px rgba(214, 48, 49, 0.4);
+            position: relative;
+        }
+        .ticket-title { font-size: 22px; font-weight: bold; margin-bottom: 5px; }
+        .ticket-desc { font-size: 14px; opacity: 0.95; margin-top: 5px; }
+        .ticket-expire { 
+            background: rgba(255, 255, 255, 0.2); 
+            display: inline-block; 
+            padding: 4px 12px; 
+            border-radius: 10px; 
+            font-size: 12px; 
+            margin-top: 10px; 
+        }
+    </style>
+</head>
+<body>
+
+<div class="card" id="mainCard">
+    <div class="step-tag" id="stepTag">ข้อที่ 1/10</div>
+    <h2 id="questionText">ข้อที่ 1: ไก่กับไข่อะไรเกิดก่อนกัน? 🐔🥚</h2>
+    <div class="options" id="optionsBox"></div>
+</div>
+
+<!-- Modal Popup สำหรับให้ใส่รหัสหลังกดรัก -->
+<div class="modal" id="passModal">
+    <div class="modal-content">
+        <h3 style="color:#d63031; margin-top:0;">🔐 ปลดล็อกรางวัลลับ</h3>
+        <p style="font-size: 14px; color: #636e72;">ยืนยันสิทธิ ❤️<br>(เช่น 12345678)</p>
+        <input type="password" id="passInput" placeholder="รหัสลับ">
+        <div class="error-msg" id="errorMsg">รหัสไม่ถูกต้อง นอยอ่าาาา 😜</div>
+        <button class="pass-btn" onclick="checkPassword()">รับรางวัล 🎁</button>
+    </div>
+</div>
+
+<script>
+    // 🔑 รหัสวันครบรอบ 2 กันยายน 2006
+    const VALID_CODES = ["02092006", "2092006", "02/09/2006", "2/9/2006"]; 
+
+    // 📝 10 คำถามกวนประสาท
+    const quizData = [
+        {
+            q: "ไก่กับไข่อะไรเกิดก่อนกัน? 🐔🥚",
+            a: ["ไข่เกิดก่อน (นักวิทยาศาสตร์บอก)", "ไก่เกิดก่อนสิ!", "ร้านไก่ทอดเกิดก่อน"]
+        },
+        {
+            q: "ปลาอะไรเรียนเก่งที่สุด? 🐟🎓",
+            a: ["ปลาหมึก (มันมีน้ำหมึก)", "ปลาต้มเค็ม", "ปลาวาฬ (ตัวใหญ่ความรู้เยอะ)"]
+        },
+        {
+            q: "ทำไมไมโครเวฟถึงชอบร้อง 'ติ๊ดๆ'? 📻",
+            a: ["อุ่นอาหารเสร็จแล้ว", "มันเจ็บคอ", "มันเรียกร้องความสนใจ"]
+        },
+        {
+            q: "จังหวัดอะไรไม่มีกระเทียมขาย? 🧄❌",
+            a: ["กระบี่ (เพราะมีแต่กระบี่)", "กระเพาะ", "กระเทียมขายหมดแล้ว!"]
+        },
+        {
+            q: "ถ้าช้างตกน้ำ จะเกิดอะไรขึ้น? 🐘💧",
+            a: ["น้ำกระจาย", "ช้างเปียกสิ!", "ช้างลอยน้ำ"]
+        },
+        {
+            q: "อะไรเอ่ย ยิ่งตัดยิ่งยาว? ✂️📏",
+            a: ["เชือก", "ถนน", "เวลาในชีวิต"]
+        },
+        {
+            q: "แมวอะไรห้ามจับ? 🐱🚫",
+            a: ["แมวไม่อยู่", "แมวเหมียว", "แมวน้ำ (เดี๋ยวมันลื่น)"]
+        },
+        {
+            q: "งูอะไรไม่มีพิษ? 🐍",
+            a: ["งูกินปลา", "งูปากเป็ด", "งูสวิดชิดตากวน (งวดนี้ชิดใกล้)"]
+        },
+        {
+            q: "ทำไมหมาถึงชอบวิ่งเห่าเครื่องบิน? 🐕✈️",
+            a: ["มันอยากบินได้", "เพราะมันเห่ารถยนต์จนเบื่อแล้ว", "มันทักทายคนบนเครื่อง"]
+        },
+        {
+            q: "พี่ปลื้มตอบมากวนๆ 9 ข้อ รำคาญรึยังคะ? 🤪",
+            a: ["รำคาญมากกก!", "ยัง! เอามาอีก 100 ข้อ", "เฉยๆ รอข้อสุดท้ายอยู่"]
+        }
+    ];
+
+    let currentStep = 0;
+
+    function renderQuestion() {
+        document.getElementById('stepTag').innerText = `ข้อที่ ${currentStep + 1}/10`;
+        document.getElementById('questionText').innerText = quizData[currentStep].q;
+        
+        const optionsBox = document.getElementById('optionsBox');
+        optionsBox.innerHTML = '';
+        
+        quizData[currentStep].a.forEach(ansText => {
+            const btn = document.createElement('button');
+            btn.innerText = ansText;
+            btn.onclick = () => {
+                currentStep++;
+                if (currentStep < quizData.length) {
+                    renderQuestion();
+                } else {
+                    showFinalQuestion();
+                }
+            };
+            optionsBox.appendChild(btn);
+        });
+    }
+
+    function showFinalQuestion() {
+        document.getElementById('stepTag').innerText = "คำถามสำคัญที่สุด! 💖";
+        document.getElementById('questionText').innerText = "ตอบกวนๆ ครบ 10 ข้อแล้ว... สรุปแล้วพี่ปลื้มรักน้องครีมไหมคะ? 🥺";
+        
+        const optionsBox = document.getElementById('optionsBox');
+        optionsBox.innerHTML = `
+            <button onclick="openPasswordModal()">ไม่รักก้ต้องรักย่ะะ ❤️</button>
+            <button class="btn-no-forced" id="noBtn" onmouseover="dodgeBtn()" onclick="dodgeBtn()">ไม่รักหรอก 😜</button>
+        `;
+    }
+
+    function dodgeBtn() {
+        const btn = document.getElementById('noBtn');
+        const x = Math.random() * (window.innerWidth - 120);
+        const y = Math.random() * (window.innerHeight - 60);
+        btn.style.position = 'fixed';
+        btn.style.left = x + 'px';
+        btn.style.top = y + 'px';
+    }
+
+    // เปิดหน้าป๊อปอัปให้ใส่รหัสลับ
+    function openPasswordModal() {
+        document.getElementById('passModal').style.display = 'flex';
+    }
+
+    // ตรวจสอบรหัสผ่าน
+    function checkPassword() {
+        const input = document.getElementById('passInput').value.trim();
+        if (VALID_CODES.includes(input)) {
+            document.getElementById('passModal').style.display = 'none';
+            showRewardCard();
+        } else {
+            document.getElementById('errorMsg').style.display = 'block';
+        }
+    }
+
+    // แสดงหน้าบัตรรางวัลพูดมาก 1 วัน
+    function showRewardCard() {
+        confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+
+        document.getElementById('mainCard').innerHTML = `
+            <div style="font-size: 50px; margin-bottom: 5px;">🎉🥰</div>
+            <h1 style="color: #d63031; font-size: 22px; margin-bottom: 5px;">
+                เค้ารักพี่ปลื้มที่สุดดดดดด 💕
+            </h1>
+            <p style="color: #636e72; font-size: 14px; margin-bottom: 10px;">
+                ตอบครบ 10 ข้อ + ใส่รหัสถูกต้อง รับรางวัลไปเล้ย!
+            </p>
+            
+            <div class="ticket">
+                <div class="ticket-title">🎟️ บัตรพูดมาก 1 วัน</div>
+                <div class="ticket-desc">
+                    ใช้สิทธิ์ให้เค้าพูดเยอะๆๆๆได้เลย! 🗣️✨
+                </div>
+                <div class="ticket-expire">⏰ วันหมดอายุ: สิ้นเดือนนี้เท่านั้น!</div>
+            </div>
+
+            <p style="color: #ff7675; font-size: 13px; font-weight: bold; margin-top: 15px;">
+                📸 แคปหน้านี้ส่งมาให้ชื่นใจแล้วใช้สิทธิ์ได้เลยจ้า!
+            </p>
+        `;
+    }
+
+    renderQuestion();
+</script>
+
+</body>
+</html>
